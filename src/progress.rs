@@ -1,5 +1,6 @@
+#![allow(unused)]
 use crate::logger::Logger;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::{Rc, Weak};
 use std::time::{Duration, Instant};
 
@@ -8,18 +9,18 @@ pub struct Progress {
     unit: String,
     precision: u8,
 
-    is_running: bool,
-    is_active: bool,
+    is_running: Cell<bool>,
+    is_active: Cell<bool>,
 
-    total: Option<u64>,
-    initial: Option<u64>,
-    current: Option<u64>,
+    total: Cell<Option<u64>>,
+    initial: Cell<Option<u64>>,
+    current: Cell<Option<u64>>,
 
-    initial_time: Option<Instant>,
-    current_time: Option<Instant>,
-    rate: Option<f64>,
+    initial_time: Cell<Option<Instant>>,
+    current_time: Cell<Option<Instant>>,
+    rate: Cell<Option<f64>>,
 
-    old_length: Option<u64>,
+    old_length: Cell<Option<u64>>,
 }
 
 pub struct ProgressConfig {
@@ -31,8 +32,10 @@ impl ProgressConfig {
     pub fn new(unit: String, precision: u8) -> Self {
         Self { unit, precision }
     }
+}
 
-    pub fn default() -> Self {
+impl Default for ProgressConfig {
+    fn default() -> Self {
         Self {
             unit: String::from("item"),
             precision: 3,
@@ -46,19 +49,46 @@ impl Progress {
             logger: RefCell::new(Weak::new()),
             unit,
             precision,
-            is_running: false,
-            is_active: false,
-            total: None,
-            initial: None,
-            current: None,
-            initial_time: None,
-            current_time: None,
-            rate: None,
-            old_length: None,
+            is_running: Cell::new(false),
+            is_active: Cell::new(false),
+            total: Cell::new(None),
+            initial: Cell::new(None),
+            current: Cell::new(None),
+            initial_time: Cell::new(None),
+            current_time: Cell::new(None),
+            rate: Cell::new(None),
+            old_length: Cell::new(None),
         }
     }
 
-    pub fn default() -> Self {
+    pub fn from_config(config: ProgressConfig) -> Self {
+        Self {
+            logger: RefCell::new(Weak::new()),
+            unit: config.unit.clone(),
+            precision: config.precision,
+            is_running: Cell::new(false),
+            is_active: Cell::new(false),
+            total: Cell::new(None),
+            initial: Cell::new(None),
+            current: Cell::new(None),
+            initial_time: Cell::new(None),
+            current_time: Cell::new(None),
+            rate: Cell::new(None),
+            old_length: Cell::new(None),
+        }
+    }
+
+    pub fn with_logger(&self, logger: Weak<Logger>) {
+        *self.logger.borrow_mut() = logger;
+    }
+
+    pub fn reset_logger(&self) {
+        *self.logger.borrow_mut() = Weak::new();
+    }
+}
+
+impl Default for Progress {
+    fn default() -> Self {
         Self {
             logger: RefCell::new(Weak::new()),
             unit: String::from("item"),
@@ -73,30 +103,5 @@ impl Progress {
             rate: None,
             old_length: None,
         }
-    }
-
-    pub fn from_config(config: ProgressConfig) -> Self {
-        Self {
-            logger: RefCell::new(Weak::new()),
-            unit: config.unit.clone(),
-            precision: config.precision,
-            is_running: false,
-            is_active: false,
-            total: None,
-            initial: None,
-            current: None,
-            initial_time: None,
-            current_time: None,
-            rate: None,
-            old_length: None,
-        }
-    }
-
-    pub fn with_logger(&self, logger: Weak<Logger>) {
-        *self.logger.borrow_mut() = logger;
-    }
-
-    pub fn reset_logger(&self) {
-        *self.logger.borrow_mut() = Weak::new();
     }
 }
