@@ -1,6 +1,8 @@
 #![allow(unused)]
 use crate::logger::Logger;
 use std::cell::{Cell, RefCell};
+use std::error::Error;
+use std::io::{self, Write};
 use std::rc::{Rc, Weak};
 use std::time::{Duration, Instant};
 
@@ -103,5 +105,28 @@ impl Default for Progress {
             rate: Cell::new(None),
             old_length: Cell::new(None),
         }
+    }
+}
+
+impl Progress {
+    pub fn run(&self) -> Result<(), Box<dyn Error>> {
+        if !self.is_active.get() {
+            return Err("Progress is not active".into());
+        }
+
+        if self.is_running.get() {
+            return Err("Progress is already running".into());
+        }
+        self.is_running.set(true);
+
+        if let Some(logger) = self.logger.borrow().upgrade() {
+            self.old_length.set(Some(logger.log_progress()?));
+        } else {
+            // TODO: pretty print
+            print!("");
+            io::stdout().flush().unwrap();
+        }
+
+        Ok(())
     }
 }

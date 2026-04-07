@@ -1,6 +1,7 @@
 #![allow(unused)]
 use crate::progress::{Progress, ProgressConfig};
 use std::cell::RefCell;
+use std::error::Error;
 use std::rc::Rc;
 
 pub struct Logger {
@@ -81,5 +82,11 @@ impl Logger {
         progress.with_logger(Rc::downgrade(&logger));
 
         logger
+    }
+}
+
+impl Logger {
+    pub fn log_progress(&self) -> Result<u64, Box<dyn Error>> {
+        Ok(0)
     }
 }
